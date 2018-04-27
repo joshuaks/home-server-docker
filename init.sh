@@ -31,6 +31,11 @@ function main(){
 	mkdir -p "${HOME}/.ssh"
 	touch "${HOME}/.ssh/id_rsa"
     '
+
+    echo "CONTAINER NAME: ${container_name}"
+    echo 'automatically exec-ing into container'
+    # just drop us right into this
+    docker exec -it "${container_name}" bash
 }
 main
 
