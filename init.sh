@@ -25,7 +25,7 @@ function main(){
     docker exec -it "${container_name}" sh -c ' 
     	export DOCKER_API_VERSION=1.23
 	apk update
-	apk add curl git bash
+	apk add curl git bash openssh vim
 	curl -L --fail https://github.com/docker/compose/releases/download/1.21.0/run.sh -o /usr/local/bin/docker-compose
 	chmod +x /usr/local/bin/docker-compose
     '
