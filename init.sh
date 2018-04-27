@@ -20,6 +20,7 @@ function main(){
     --name="${container_name}" \
     --env DOCKER_API_VERSION=1.23 \
     -d \
+    --workdir=/root \
     docker:18.04 \
     -f /dev/null
 
@@ -33,6 +34,8 @@ function main(){
     '
 
     echo "CONTAINER NAME: ${container_name}"
+    echo 'CONTAINER NAME in host environment at ${DBASE}'
+    export DBASE="${container_name}"
     echo 'automatically exec-ing into container'
     # just drop us right into this
     docker exec -it "${container_name}" bash
