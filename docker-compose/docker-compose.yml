@@ -5,22 +5,26 @@
 # CAP_ADD/DROP information: http://rhelblog.redhat.com/2016/10/17/secure-your-containers-with-this-one-weird-trick/
 
 
-version: "2.3"
+version: "2.0"
 
 services:    
 
 
 
-  ### NB-UPDATES-AUTO-CHECK ##############################################################################
   resilio-sync:
     container_name: resilio-sync
     image: resilio/sync:release-2.5.12
     restart: always
     ports:
-      - 8887:8888
-      - 55554:55555
+      - 8887:8888   # webui
+      - 55554:55555 # sync traffic
+    restart: on-failure
+    read_only: true
+    #user: nobody
+    cap_drop:
+        - ALL
     volumes:
-      - /volume1/docker/resilio-sync-new/default_folder_location/:/mnt/sync
-      - /volume1/docker/resilio-sync-new/file_download_location/:"/root/Resilio Sync"
+        - /volume1/docker/resilio-sync-new/default_folder_location:/mnt/sync
+        - /volume1/docker/resilio-sync-new/file_download_location:/root/Resilio Sync
 
 
