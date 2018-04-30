@@ -14,11 +14,10 @@ services:
   resilio-sync:
     container_name: resilio-sync
     image: resilio/sync:release-2.5.12
-    restart: always
-    ports:
-      - 8887:8888   # webui
-      - 55554:55555 # sync traffic
     restart: on-failure
+    ports:
+        - "2000:8888"   # webui
+        - "55555:55555" # sync traffic
     read_only: true
     #user: nobody
     cap_drop:
@@ -26,5 +25,30 @@ services:
     volumes:
         - /volume1/docker/resilio-sync-new/default_folder_location:/mnt/sync
         - /volume1/docker/resilio-sync-new/file_download_location:/root/Resilio Sync
+
+
+  transmission-videos:
+    container_name: transmission-videos
+    image: linuxserver/transmission:121
+    restart: on-failure
+    ports:
+        - "2001:9091"   # webui
+        - "51413:51413" # torrent ports
+    #read_only: true
+    #user: nobody
+    cap_drop:
+        - ALL
+    cap_add:
+        - setgid
+        - setuid
+        - chown
+    volumes:
+        - /volume1/docker/docker-transmission-videos-new/config:/config
+        - /volume1/docker/docker-transmission-videos-new/downloads:/downloads
+    tmpfs:
+        - /var/run/s6
+
+
+
 
 
