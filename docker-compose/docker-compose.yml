@@ -31,10 +31,12 @@ services:
     container_name: transmission-videos
     image: linuxserver/transmission:121
     restart: on-failure
+    environment:
+        - S6_READ_ONLY_ROOT=1 # https://github.com/just-containers/s6-overlay/pull/176
     ports:
         - "2001:9091"   # webui
         - "51413:51413" # torrent ports
-    #read_only: true
+    read_only: true
     #user: nobody
     cap_drop:
         - ALL
@@ -46,7 +48,8 @@ services:
         - /volume1/docker/docker-transmission-videos-new/config:/config
         - /volume1/docker/docker-transmission-videos-new/downloads:/downloads
     tmpfs:
-        - /var/run/s6
+        - /var:rw,exec 
+        - /run
 
 
 
