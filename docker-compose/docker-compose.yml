@@ -12,12 +12,14 @@ services:
 
 
   resilio-sync:
-    container_name: resilio-sync
+    container_name: dc-resilio-sync
     image: resilio/sync:release-2.5.12
     restart: on-failure
+    networks:
+        - resilio-sync
     ports:
         - "2000:8888"   # webui
-        - "55555:55555" # sync traffic
+        - "55556:55555" # sync traffic
     read_only: true
     #user: nobody
     cap_drop:
@@ -28,14 +30,17 @@ services:
 
 
   transmission-videos:
-    container_name: transmission-videos
+    container_name: dc-transmission-videos
     image: linuxserver/transmission:121
+    networks:
+        - transmission-videos
     restart: on-failure
     environment:
         - S6_READ_ONLY_ROOT=1 # https://github.com/just-containers/s6-overlay/pull/176
     ports:
         - "2001:9091"   # webui
-        - "51413:51413" # p2p traffic
+        - "51413:51413/tcp" # p2p traffic
+        - "51413:51413/udp" # p2p traffic
     read_only: true
     #user: nobody
     cap_drop:
@@ -53,5 +58,7 @@ services:
 
 
 
-
+networks:
+    resilio-sync:
+    transmission-videos:
 
