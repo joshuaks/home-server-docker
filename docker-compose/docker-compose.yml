@@ -56,9 +56,27 @@ services:
         - /var:rw,exec 
         - /run
 
+  flexget:
+    container_name: dc-flexget
+    image: wiserain/flexget:2.13.14
+    networks:
+        - flexget
+    restart: on-failure
+    ports:
+        - "2002:3539"   # webui
+    #read_only: true
+    #user: nobody
+    #cap_drop:
+        #- ALL
+    volumes:
+        - /data
+        - /config
+    tmpfs:
+        - tmp
 
 
 networks:
     resilio-sync:
     transmission-videos:
+    flexget:
 
