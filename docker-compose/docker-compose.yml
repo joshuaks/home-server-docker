@@ -56,6 +56,35 @@ services:
         - /var:rw,exec 
         - /run
 
+
+
+  transmission-music:
+    container_name: dc-transmission-music
+    image: linuxserver/transmission:121
+    networks:
+        - transmission-music
+    restart: on-failure
+    environment:
+        - S6_READ_ONLY_ROOT=1 # https://github.com/just-containers/s6-overlay/pull/176
+    ports:
+        - "2003:9091"   # webui
+        - "51416:51413/tcp" # p2p traffic
+        - "51416:51413/udp" # p2p traffic
+    read_only: true
+    cap_drop:
+        - ALL
+    cap_add:
+        - setgid
+        - setuid
+        - chown
+    volumes:
+        - /volume1/docker/docker-transmission-music-new/config:/config
+        - /volume1/docker/docker-transmission-music-new/downloads:/downloads
+    tmpfs:
+        - /var:rw,exec 
+        - /run
+
+
   flexget:
     container_name: dc-flexget
     image: wiserain/flexget:2.13.14
@@ -78,5 +107,6 @@ services:
 networks:
     resilio-sync:
     transmission-videos:
+    transmission-music:
     flexget:
 
