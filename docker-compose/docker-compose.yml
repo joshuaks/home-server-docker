@@ -104,9 +104,30 @@ services:
         - tmp
 
 
+  pihole:
+    container_name: dc-pihole
+    image: diginc/pi-hole:debian_v3.3.1
+    networks:
+        - pihole
+    restart: on-failure
+    #ports:
+        #- "2002:53"   # webui
+        #- "2002:80"   # webui
+    #read_only: true
+    #user: nobody
+    #cap_drop:
+        #- ALL
+    #volumes:
+        #- /data
+        #- /config
+    tmpfs:
+        - tmp
+
+
 networks:
     resilio-sync:
     transmission-videos:
     transmission-music:
     flexget:
+    pihole
 
