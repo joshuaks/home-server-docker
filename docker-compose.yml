@@ -1,0 +1,134 @@
+# notes
+# ports are exposed to the host machine
+# exposed only allows access by linked services
+
+# CAP_ADD/DROP information: http://rhelblog.redhat.com/2016/10/17/secure-your-containers-with-this-one-weird-trick/
+
+
+version: "2.0"
+
+services:    
+
+
+
+  resilio-sync:
+    container_name: dc-resilio-sync
+    image: resilio/sync:release-2.5.12
+    restart: on-failure
+    networks:
+        - resilio-sync
+    ports:
+        - "2000:8888"   # webui
+        - "55556:55555" # sync traffic
+    read_only: true
+    #user: nobody
+    cap_drop:
+        - ALL
+    volumes:
+        - /volume1/docker/resilio-sync-new/default_folder_location:/mnt/sync
+        - /volume1/docker/resilio-sync-new/file_download_location:/root/Resilio Sync
+
+
+  transmission-videos:
+    container_name: dc-transmission-videos
+    image: linuxserver/transmission:121
+    networks:
+        - transmission
+    restart: on-failure
+    environment:
+        - S6_READ_ONLY_ROOT=1 # https://github.com/just-containers/s6-overlay/pull/176
+    ports:
+        - "2001:9091"   # webui
+        - "51413:51413/tcp" # p2p traffic
+        - "51413:51413/udp" # p2p traffic
+    read_only: true
+    #user: nobody
+    cap_drop:
+        - ALL
+    cap_add:
+        - setgid
+        - setuid
+        - chown
+    volumes:
+        - ./configs/transmission-videos:/config
+        - /volume1/docker/docker-transmission-videos-new/downloads:/downloads
+    tmpfs:
+        - /var:rw,exec 
+        - /run
+
+
+
+  transmission-music:
+    container_name: dc-transmission-music
+    image: linuxserver/transmission:121
+    networks:
+        - transmission
+    restart: on-failure
+    environment:
+        - S6_READ_ONLY_ROOT=1 # https://github.com/just-containers/s6-overlay/pull/176
+    ports:
+        - "2003:9091"   # webui
+        - "51416:51413/tcp" # p2p traffic
+        - "51416:51413/udp" # p2p traffic
+    read_only: true
+    cap_drop:
+        - ALL
+    cap_add:
+        - setgid
+        - setuid
+        - chown
+    volumes:
+        - ./configs/transmission-music:/config
+        - /volume1/docker/docker-transmission-music-new/downloads:/downloads
+    tmpfs:
+        - /var:rw,exec 
+        - /run
+
+
+  flexget:
+    container_name: dc-flexget
+    image: wiserain/flexget:2.13.14
+    networks:
+        - flexget
+    restart: on-failure
+    ports:
+        - "2002:3539"   # webui
+    #read_only: true
+    #user: nobody
+    #cap_drop:
+        #- ALL
+    volumes:
+        - /data
+        - ./configs/flexget:/config
+        #-/config
+    tmpfs:
+        - tmp
+
+
+  pihole:
+    container_name: dc-pihole
+    image: diginc/pi-hole:debian_v3.3.1
+    networks:
+        - pihole
+    restart: on-failure
+    #ports:
+        #- "2002:53/tcp"   # 
+        #- "2002:53/udp"   # 
+        #- "2007:80"   # webui
+    #read_only: true
+    #user: nobody
+    #cap_drop:
+        #- ALL
+    #volumes:
+        #- /data
+        #- /config
+    tmpfs:
+        - tmp
+
+
+networks:
+    resilio-sync:
+    transmission:
+    flexget:
+    pihole:
+

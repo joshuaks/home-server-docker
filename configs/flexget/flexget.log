@@ -1,0 +1,17 @@
+2018-05-02 01:22 VERBOSE  manager                       Creating new database /config/db-config.sqlite - DO NOT INTERUPT ...
+2018-05-02 01:23 INFO     scheduler                     Local timezone name could not be determined. Scheduler will display times in UTC for any logmessages. To resolve this set up /etc/timezone with correct time zone name.
+2018-05-02 01:23 INFO     scheduler                     No schedules defined in config. Defaulting to run all tasks on a 1 hour interval.
+2018-05-02 01:23 INFO     scheduler                     Starting scheduler
+2018-05-02 01:23 INFO     web_server_daemon                 Running web server at IP 0.0.0.0:3539
+2018-05-02 01:23 INFO     web_server_daemon                 Initiating API
+2018-05-02 01:23 INFO     web_server_daemon                 Registering WebUI v1
+2018-05-02 01:23 WARNING  web_server                    No password set for web server, create one by using `flexget web passwd <password>`
+2018-05-02 01:23 INFO     web_server                    Web interface available at http://172.26.0.2:3539
+2018-05-02 01:27 INFO     scheduler                     Local timezone name could not be determined. Scheduler will display times in UTC for any logmessages. To resolve this set up /etc/timezone with correct time zone name.
+2018-05-02 01:27 INFO     scheduler                     No schedules defined in config. Defaulting to run all tasks on a 1 hour interval.
+2018-05-02 01:27 INFO     scheduler                     Starting scheduler
+2018-05-02 01:27 INFO     web_server_daemon                 Running web server at IP 0.0.0.0:3539
+2018-05-02 01:27 INFO     web_server_daemon                 Initiating API
+2018-05-02 01:27 INFO     web_server_daemon                 Registering WebUI v1
+2018-05-02 01:27 WARNING  web_server                    No password set for web server, create one by using `flexget web passwd <password>`
+2018-05-02 01:27 INFO     web_server                    Web interface available at http://172.26.0.2:3539
