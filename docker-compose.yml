@@ -11,24 +11,6 @@ services:
 
 
 
-  resilio-sync:
-    container_name: dc-resilio-sync
-    image: resilio/sync:release-2.5.12
-    restart: on-failure
-    networks:
-        - resilio-sync
-    ports:
-        - "2000:8888"   # webui
-        - "55556:55555" # sync traffic
-    #read_only: true
-    #user: nobody
-    #cap_drop:
-      #- ALL
-    volumes:
-        - /volume1/docker/resilio-sync-new/default_folder_location:/mnt/sync
-        - /volume1/docker/resilio-sync-new/file_download_location:/root/Resilio Sync
-
-
   transmission-videos:
     container_name: dc-transmission-videos
     image: linuxserver/transmission:121
@@ -43,15 +25,18 @@ services:
         - "51413:51413/udp" # p2p traffic
     read_only: true
     #user: nobody
-    cap_drop:
-        - ALL
-    cap_add:
-        - setgid
-        - setuid
-        - chown
+    #    cap_drop:
+    #        - ALL
+    #    cap_add:
+    #        - setgid
+    #        - setuid
+    #        - chown
     volumes:
-        - ./configs/transmission-videos:/config
-        - /volume1/docker/docker-transmission-videos-new/downloads:/downloads
+        - /volume1/docker/docker-transmission-video/info:/config
+        - /volume1/video/Transmission Downloads/:/downloads/complete
+        - /downloads/incomplete
+        #- /config
+          #- /downloads
     tmpfs:
         - /var:rw,exec 
         - /run
@@ -126,9 +111,16 @@ services:
         - tmp
 
 
+  syncthing:
+    container_name: dc-syncthing
+    image: linuxserver/syncthing
+    networks:
+        - syncthing
+    restart: on-failure
+
 networks:
-    resilio-sync:
     transmission:
     flexget:
     pihole:
+    syncthing:
 
