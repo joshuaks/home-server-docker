@@ -118,6 +118,10 @@ services:
         - syncthing
     restart: on-failure
 
+
+### add reverse proxy
+#
+#
 networks:
     transmission:
     flexget:
