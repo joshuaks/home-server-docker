@@ -10,6 +10,29 @@ version: "2.0"
 services:    
 
 
+  # https://hub.docker.com/r/plexinc/pms-docker
+  plex:
+    container_name: dc-plex
+    image: plexinc/pms-docker:1.14.1.5488-cc260c476
+    networks:
+      - plex
+    restart: always
+    ports:
+      - "32400:32400/tcp"
+        #read_only: true
+    volumes:
+      - /volume1/docker/plex/config:/config
+      - /transcode
+      - /volume1/video/Transmission Downloads/:/data:ro
+        #    environment:
+        #      - TZ=America/New_York
+        #      - S6_READ_ONLY_ROOT=1 # https://github.com/just-containers/s6-overlay/pull/176
+    tmpfs:
+      - /var:rw,exec 
+      - /run
+      - /var/run:rw,exec
+      - /tmp
+
 
   transmission-videos:
     container_name: dc-transmission-videos
@@ -23,100 +46,99 @@ services:
         - "2001:9091"   # webui
         - "51413:51413/tcp" # p2p traffic
         - "51413:51413/udp" # p2p traffic
-    read_only: true
-    #user: nobody
+    #    read_only: true
+    #    #user: nobody
     #    cap_drop:
-    #        - ALL
+    #      - ALL
     #    cap_add:
-    #        - setgid
-    #        - setuid
-    #        - chown
+    #      - setgid
+    #      - setuid
+    #      - chown
     volumes:
-        - /volume1/docker/docker-transmission-video/info:/config
-        - /volume1/video/Transmission Downloads/:/downloads/complete
-        - /downloads/incomplete
-        #- /config
-          #- /downloads
+      - /volume1/docker/docker-transmission-video/info:/config
+      - /volume1/video/Transmission Downloads/:/downloads/complete
+      - /downloads/incomplete
     tmpfs:
         - /var:rw,exec 
         - /run
+        - /var/run:rw,exec
 
 
 
-  transmission-music:
-    container_name: dc-transmission-music
-    image: linuxserver/transmission:121
-    networks:
-        - transmission
-    restart: on-failure
-    environment:
-        - S6_READ_ONLY_ROOT=1 # https://github.com/just-containers/s6-overlay/pull/176
-    ports:
-        - "2003:9091"   # webui
-        - "51416:51413/tcp" # p2p traffic
-        - "51416:51413/udp" # p2p traffic
-    read_only: true
-    cap_drop:
-        - ALL
-    cap_add:
-        - setgid
-        - setuid
-        - chown
-    volumes:
-        - ./configs/transmission-music:/config
-        - /volume1/docker/docker-transmission-music-new/downloads:/downloads
-    tmpfs:
-        - /var:rw,exec 
-        - /run
+          #  transmission-music:
+          #    container_name: dc-transmission-music
+          #    image: linuxserver/transmission:121
+          #    networks:
+          #        - transmission
+          #    restart: on-failure
+          #    environment:
+          #        - S6_READ_ONLY_ROOT=1 # https://github.com/just-containers/s6-overlay/pull/176
+          #    ports:
+          #        - "2003:9091"   # webui
+          #        - "51416:51413/tcp" # p2p traffic
+          #        - "51416:51413/udp" # p2p traffic
+          #    read_only: true
+          #    cap_drop:
+          #        - ALL
+          #    cap_add:
+          #        - setgid
+          #        - setuid
+          #        - chown
+          #    volumes:
+          #        - ./configs/transmission-music:/config
+          #        - /volume1/docker/docker-transmission-music-new/downloads:/downloads
+          #    tmpfs:
+          #        - /var:rw,exec 
+          #        - /run
+          #
 
-
-  flexget:
-    container_name: dc-flexget
-    image: wiserain/flexget:2.13.14
-    networks:
-        - flexget
-    restart: on-failure
-    ports:
-        - "2002:3539"   # webui
-    #read_only: true
-    #user: nobody
-    #cap_drop:
-        #- ALL
-    volumes:
-        - /data
-        - ./configs/flexget:/config
-        #-/config
-    tmpfs:
-        - tmp
-
-
-  pihole:
-    container_name: dc-pihole
-    image: diginc/pi-hole:debian_v3.3.1
-    networks:
-        - pihole
-    restart: on-failure
-    #ports:
-        #- "2002:53/tcp"   # 
-        #- "2002:53/udp"   # 
-        #- "2007:80"   # webui
-    #read_only: true
-    #user: nobody
-    #cap_drop:
-        #- ALL
-    #volumes:
-        #- /data
-        #- /config
-    tmpfs:
-        - tmp
-
-
-  syncthing:
-    container_name: dc-syncthing
-    image: linuxserver/syncthing
-    networks:
-        - syncthing
-    restart: on-failure
+          #  flexget:
+          #    container_name: dc-flexget
+          #    image: wiserain/flexget:2.13.14
+          #    networks:
+          #        - flexget
+          #    restart: on-failure
+          #    ports:
+          #        - "2002:3539"   # webui
+          #    #read_only: true
+          #    #user: nobody
+          #    #cap_drop:
+          #        #- ALL
+          #    volumes:
+          #        - /data
+          #        - ./configs/flexget:/config
+          #        #-/config
+          #    tmpfs:
+          #        - tmp
+          #
+          #
+          #  pihole:
+          #    container_name: dc-pihole
+          #    image: diginc/pi-hole:debian_v3.3.1
+          #    networks:
+          #        - pihole
+          #    restart: on-failure
+          #    #ports:
+          #        #- "2002:53/tcp"   # 
+          #        #- "2002:53/udp"   # 
+          #        #- "2007:80"   # webui
+          #    #read_only: true
+          #    #user: nobody
+          #    #cap_drop:
+          #        #- ALL
+          #    #volumes:
+          #        #- /data
+          #        #- /config
+          #    tmpfs:
+          #        - tmp
+          #
+          #
+          #  syncthing:
+          #    container_name: dc-syncthing
+          #    image: linuxserver/syncthing
+          #    networks:
+          #        - syncthing
+          #    restart: on-failure
 
 
 ### add reverse proxy
@@ -124,7 +146,8 @@ services:
 #
 networks:
     transmission:
-    flexget:
-    pihole:
-    syncthing:
+        #    flexget:
+        #    pihole:
+        #    syncthing:
+    plex:
 #

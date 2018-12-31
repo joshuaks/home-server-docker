@@ -25,7 +25,7 @@ function main(){
         --recursive \
         --password-file="${SCRIPT_DIRPATH}/keyfile_password" \
         "${SCRIPT_DIRPATH}" \
-        partyHat24@'10.0.1.8':'${HOME}/docker'
+        joshuasarver@'10.0.1.8':'${HOME}/docker'
 
     echo 'complete'
     exit 0
