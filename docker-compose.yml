@@ -9,6 +9,19 @@ version: "2.0"
 
 services:    
 
+  nginx:
+    container_name: dc-nginx
+    image: nginx:1.15-alpine
+    networks:
+      - transmission
+    volumes:
+      - ./configs/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - 9080:80
+      - 8080:8080
+      - 8081:8081
+      - 4444:4444
+
 
   # https://hub.docker.com/r/plexinc/pms-docker
   plex:
@@ -24,9 +37,6 @@ services:
       - /volume1/docker/plex/config:/config
       - /transcode
       - /volume1/video/Transmission Downloads/:/data:ro
-        #    environment:
-        #      - TZ=America/New_York
-        #      - S6_READ_ONLY_ROOT=1 # https://github.com/just-containers/s6-overlay/pull/176
     tmpfs:
       - /var:rw,exec 
       - /run
@@ -46,6 +56,8 @@ services:
         - "2001:9091"   # webui
         - "51413:51413/tcp" # p2p traffic
         - "51413:51413/udp" # p2p traffic
+    #expose:
+        #- 9091
     #    read_only: true
     #    #user: nobody
     #    cap_drop:
