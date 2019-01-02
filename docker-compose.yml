@@ -35,7 +35,7 @@ services:
         #read_only: true
     volumes:
       - /volume1/docker/plex/config:/config
-      - /transcode
+      - plex-transcode:/transcode
       - /volume1/video/Transmission Downloads/:/data:ro
     tmpfs:
       - /var:rw,exec 
@@ -69,7 +69,7 @@ services:
     volumes:
       - /volume1/docker/docker-transmission-video/info:/config
       - /volume1/video/Transmission Downloads/:/downloads/complete
-      - /downloads/incomplete
+      - transmission-videos-incomplete:/downloads/incomplete
     tmpfs:
         - /var:rw,exec 
         - /run
@@ -163,3 +163,6 @@ networks:
         #    syncthing:
     plex:
 #
+volumes:
+  plex-transcode:
+  transmission-videos-incomplete:
