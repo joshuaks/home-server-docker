@@ -11,60 +11,40 @@ version: "2.0"
 services:    
 
 
-  nginx-proxy:
-    container_name: nginx-proxy
-    image: jwilder/nginx-proxy
-    ports:
-      - "8080:80"
-    volumes:
-      - /var/run/docker.sock:/tmp/docker.sock:ro
-    environment:
-      - DEFAULT_HOST=oxygen.local
-    networks:
-      - nginx-proxy
-      - transmission
-
-  whoami:
-    image: jwilder/whoami
-    environment:
-      - VIRTUAL_HOST=whoami.oxygen.local
-    networks:
-      - nginx-proxy
-
-#  nginx:
-#    container_name: dc-nginx
-#    image: nginx:1.15-alpine
-#    networks:
-#      - transmission
-#    volumes:
-#      - ./configs/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-#    ports:
-#        #- 9080:80
-#        #- 8080:8080
-#      - 8080:8080
-#        #- 4444:4444
-#
-
   # https://hub.docker.com/r/plexinc/pms-docker
   plex:
     container_name: dc-plex
-    image: plexinc/pms-docker:1.14.1.5488-cc260c476
+    image: plexinc/pms-docker:public
+    #network_mode: "host"
+    restart: always
     networks:
       - plex
-    restart: always
     ports:
-      - "32400:32400/tcp"
-        #read_only: true
+      - 32400:32400/tcp 
+      - 3005:3005/tcp 
+      - 8324:8324/tcp 
+      - 32469:32469/tcp 
+      - 1900:1900/udp 
+      - 32410:32410/udp 
+      - 32412:32412/udp 
+      - 32413:32413/udp 
+      - 32414:32414/udp 
     volumes:
       - /volume1/docker/plex/config:/config
       - plex-transcode:/transcode
-      - /volume1/video/Transmission Downloads/:/data:ro
-    tmpfs:
-      - /var:rw,exec 
-      - /run
-      - /var/run:rw,exec
-      - /tmp
-
+      - /volume1/video/Transmission Downloads/:/data/tv:ro
+      - /volume1/video/Transmission Downloads/:/data/movies:ro
+    environment:
+      - HOSTNAME=PlexServer
+      - TZ=America/New_York
+      - ADVERTISE_IP=http://10.0.1.8:32400
+      - ALLOWED_NETWORKS=192.168.1.0/24,172.16.0.0/16,172.19.0.0/16
+        #    tmpfs:
+        #      - /var:rw,exec 
+        #      - /run
+        #      - /var/run:rw,exec
+        #      - /tmp
+        #
 
   transmission-videos:
     container_name: dc-transmission-videos
@@ -186,7 +166,7 @@ networks:
         #    pihole:
         #    syncthing:
     plex:
-    nginx-proxy:
+    #nginx-proxy:
 #
 volumes:
   plex-transcode:

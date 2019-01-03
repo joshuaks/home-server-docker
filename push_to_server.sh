@@ -20,12 +20,12 @@ declare -r SCRIPT_FILEPATH="${SCRIPT_DIRPATH}/${SCRIPT_FILENAME}"
 function main(){
     echo 'pushing files to server'
     rsync \
-        --rsh="ssh -p 2022 -i ${HOME}/.ssh/id_rsa" \
+        --rsh="ssh -i ${HOME}/.ssh/id_rsa" \
         --rsync-path='/bin/rsync' \
         --recursive \
         --password-file="${SCRIPT_DIRPATH}/keyfile_password" \
         "${SCRIPT_DIRPATH}" \
-        joshuasarver@'10.0.1.8':'${HOME}/docker'
+        '10.0.1.8':'${HOME}/docker'
 
     echo 'complete'
     exit 0
