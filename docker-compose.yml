@@ -10,6 +10,18 @@ version: "2.0"
 
 services:    
 
+  nginx-proxy:
+    image: jwilder/nginx-proxy
+    restart: always
+    ports:
+      - "8080:80"
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+
+  whoami:
+    image: emilevauge/whoami
+    environment:
+      - VIRTUAL_HOST=whoami.oxygen.local
 
   # https://hub.docker.com/r/plexinc/pms-docker
   plex:
@@ -31,89 +43,85 @@ services:
     volumes:
       - /volume1/docker/plex/config:/config
       - plex-transcode:/transcode
-      - /volume1/video/Transmission Downloads/:/data/tv:ro
-      - /volume1/video/Transmission Downloads/:/data/movies:ro
+      - /volume1/video/transmission.tv.downloads/:/data/tv:ro
+      - /volume1/video/transmission.movies.downloads/:/data/movies:ro
     environment:
       - HOSTNAME=PlexServer
       - TZ=America/New_York
       - ADVERTISE_IP=http://10.0.1.8:32400
       - ALLOWED_NETWORKS=192.168.1.0/24,172.16.0.0/16,172.19.0.0/16
-        #    tmpfs:
-        #      - /var:rw,exec 
-        #      - /run
-        #      - /var/run:rw,exec
-        #      - /tmp
-        #
 
-  transmission-videos:
-    container_name: dc-transmission-videos
+
+  transmission-movies:
+    container_name: dc-transmission-movies
     image: linuxserver/transmission:121
     networks:
         - transmission
     restart: on-failure
     environment:
         - S6_READ_ONLY_ROOT=1 # https://github.com/just-containers/s6-overlay/pull/176
-          #- VIRTUAL_HOST=videos.oxygen.local
-          #- VIRTUAL_PORT=9091
     ports:
-        - "2001:9091"   # webui
-        - "51413:51413/tcp" # p2p traffic
-        - "51413:51413/udp" # p2p traffic
-    #expose:
-        #- 9091
-    #    read_only: true
-    #    #user: nobody
-    #    cap_drop:
-    #      - ALL
-    #    cap_add:
-    #      - setgid
-    #      - setuid
-    #      - chown
+        - "2002:9091"   # webui
+        - "51414:51413/tcp" # p2p traffic
+        - "51414:51413/udp" # p2p traffic
     volumes:
-      - /volume1/docker/docker-transmission-video/info:/config
-      - /volume1/video/Transmission Downloads/:/downloads/complete
-      - transmission-videos-incomplete:/downloads/incomplete
-    tmpfs:
-        - /var:rw,exec 
-        - /run
-        - /var/run:rw,exec
+      - /volume1/docker/transmission.movies.config:/config
+      - /volume1/video/transmission.movies.downloads:/downloads/complete
+      - transmission-movies-incomplete:/downloads/incomplete
 
 
-#  transmission-movies:
-#    container_name: dc-transmission-movies
+  transmission-tv:
+    container_name: dc-transmission-tv
+    image: linuxserver/transmission:121
+    networks:
+        - transmission
+    restart: on-failure
+    environment:
+        - S6_READ_ONLY_ROOT=1 # https://github.com/just-containers/s6-overlay/pull/176
+    ports:
+        - "2003:9091"   # webui
+        - "51415:51413/tcp" # p2p traffic
+        - "51415:51413/udp" # p2p traffic
+    volumes:
+      - /volume1/docker/transmission.tv.config:/config
+      - /volume1/video/transmission.tv.downloads:/downloads/complete
+      - transmission-tv-incomplete:/downloads/incomplete
+
+
+
+
+#  transmission-videos:
+#    container_name: dc-transmission-videos
 #    image: linuxserver/transmission:121
 #    networks:
 #        - transmission
 #    restart: on-failure
 #    environment:
 #        - S6_READ_ONLY_ROOT=1 # https://github.com/just-containers/s6-overlay/pull/176
+#        - VIRTUAL_HOST=videos.oxygen.local
+#        - VIRTUAL_PORT=9091
 #    ports:
-#        - "2002:9091"   # webui
-#        - "51414:51413/tcp" # p2p traffic
-#        - "51414:51413/udp" # p2p traffic
+#        - "2001:9091"   # webui
+#        - "51413:51413/tcp" # p2p traffic
+#        - "51413:51413/udp" # p2p traffic
+#          #expose:
+#          #- 9091
+#    #    read_only: true
+#    #    #user: nobody
+#    #    cap_drop:
+#    #      - ALL
+#    #    cap_add:
+#    #      - setgid
+#    #      - setuid
+#    #      - chown
 #    volumes:
-#      - transmission-movies-config:/config
-#      - /volume1/video/transmission.movies.downloads:/downloads/complete
-#      - transmission-movies-incomplete:/downloads/incomplete
-#
-#
-#  transmission-tv:
-#    container_name: dc-transmission-tv
-#    image: linuxserver/transmission:121
-#    networks:
-#        - transmission
-#    restart: on-failure
-#    environment:
-#        - S6_READ_ONLY_ROOT=1 # https://github.com/just-containers/s6-overlay/pull/176
-#    ports:
-#        - "2003:9091"   # webui
-#        - "51415:51413/tcp" # p2p traffic
-#        - "51415:51413/udp" # p2p traffic
-#    volumes:
-#      - transmission-tv-config:/config
-#      - /volume1/video/tranmission.tv.downloads:/downloads/complete
-#      - transmission-tv-incomplete:/downloads/incomplete
-
+#      - /volume1/docker/docker-transmission-video/info:/config
+#      - /volume1/video/Transmission Downloads/:/downloads/complete
+#      - transmission-videos-incomplete:/downloads/incomplete
+#    tmpfs:
+#        - /var:rw,exec 
+#        - /run
+#        - /var/run:rw,exec
 
 #  flexget:
 #    container_name: dc-flexget
@@ -169,17 +177,18 @@ services:
 #
 networks:
     transmission:
+    plex:
+    proxy:
         #    flexget:
         #    pihole:
         #    syncthing:
-    plex:
     #nginx-proxy:
 #
 volumes:
   plex-transcode:
-  transmission-videos-incomplete:
-  transmission-movies-config:
+      #transmission-videos-incomplete:
+      #transmission-movies-config:
   transmission-movies-incomplete:
-  transmission-tv-config:
+      #transmission-tv-config:
   transmission-tv-incomplete:
 
