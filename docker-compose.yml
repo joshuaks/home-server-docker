@@ -4,7 +4,7 @@
 
 # CAP_ADD/DROP information: http://rhelblog.redhat.com/2016/10/17/secure-your-containers-with-this-one-weird-trick/
 
-# @TODO: transmission-movies, transmission-tv, openvpn, pihole, flexget, webdav, git server, backblaze, ansible
+# @TODO: openvpn, pihole, flexget, webdav, git server, backblaze, ansible
 
 version: "2.0"
 
@@ -186,9 +186,6 @@ networks:
 #
 volumes:
   plex-transcode:
-      #transmission-videos-incomplete:
-      #transmission-movies-config:
   transmission-movies-incomplete:
-      #transmission-tv-config:
   transmission-tv-incomplete:
 
