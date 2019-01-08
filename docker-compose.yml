@@ -4,11 +4,21 @@
 
 # CAP_ADD/DROP information: http://rhelblog.redhat.com/2016/10/17/secure-your-containers-with-this-one-weird-trick/
 
-# @TODO: openvpn, pihole, flexget, webdav, git server, backblaze, ansible
+# @TODO: dns, openvpn, pihole, flexget, webdav, git server, backblaze, ansible -- drops caps, restrict permissions, etc.
 
 version: "2.0"
 
 services:    
+
+
+#  dns-server:
+#    container_name: dc-dns-server
+#    image: andyshinn/dnsmasq:2.76
+#    cap_add:
+#      - NET_ADMIN
+#    networks:
+#      - dns
+
 
   nginx-proxy:
     container_name: dc-proxy
@@ -23,7 +33,6 @@ services:
       - transmission
       - plex
     environment:
-        #- DEFAULT_HOST=oxygen.local
       - DEFAULT_HOST=whoami.oxygen.local
 
 
@@ -191,13 +200,11 @@ services:
 #    restart: on-failure
 
 
-### add reverse proxy
-#
-#
 networks:
     transmission:
     plex:
     proxy:
+    dns:
         #    flexget:
         #    pihole:
         #    syncthing:
