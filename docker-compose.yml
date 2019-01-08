@@ -11,17 +11,30 @@ version: "2.0"
 services:    
 
   nginx-proxy:
+    container_name: dc-proxy
     image: jwilder/nginx-proxy
     restart: always
     ports:
       - "8080:80"
     volumes:
       - /var/run/docker.sock:/tmp/docker.sock:ro
+    networks:
+      - proxy
+      - transmission
+      - plex
+    environment:
+        #- DEFAULT_HOST=oxygen.local
+      - DEFAULT_HOST=whoami.oxygen.local
+
 
   whoami:
     image: emilevauge/whoami
     environment:
       - VIRTUAL_HOST=whoami.oxygen.local
+      - VIRTUAL_PORT=80
+    networks:
+      - proxy
+
 
   # https://hub.docker.com/r/plexinc/pms-docker
   plex:
@@ -50,6 +63,8 @@ services:
       - TZ=America/New_York
       - ADVERTISE_IP=http://10.0.1.8:32400
       - ALLOWED_NETWORKS=192.168.1.0/24,172.16.0.0/16,172.19.0.0/16
+      - VIRTUAL_HOST=plex.oxygen.local
+      - VIRTUAL_PORT=32400
 
 
   transmission-movies:
@@ -60,6 +75,8 @@ services:
     restart: on-failure
     environment:
         - S6_READ_ONLY_ROOT=1 # https://github.com/just-containers/s6-overlay/pull/176
+        - VIRTUAL_HOST=movies.oxygen.local
+        - VIRTUAL_PORT=9091
     ports:
         - "2002:9091"   # webui
         - "51414:51413/tcp" # p2p traffic
@@ -78,6 +95,8 @@ services:
     restart: on-failure
     environment:
         - S6_READ_ONLY_ROOT=1 # https://github.com/just-containers/s6-overlay/pull/176
+        - VIRTUAL_HOST=tv.oxygen.local
+        - VIRTUAL_PORT=9091
     ports:
         - "2003:9091"   # webui
         - "51415:51413/tcp" # p2p traffic
