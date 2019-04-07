@@ -11,13 +11,21 @@ version: "2.0"
 services:    
 
 
-#  dns-server:
-#    container_name: dc-dns-server
-#    image: andyshinn/dnsmasq:2.76
-#    cap_add:
-#      - NET_ADMIN
-#    networks:
-#      - dns
+  dns-server:
+    container_name: dc-dns-server
+    image: andyshinn/dnsmasq:2.76
+    cap_add:
+      - NET_ADMIN
+    volumes:
+      - ./configs/dns/hosts:/etc/hosts:ro
+      - ./configs/dns/dnsmasq.conf:/etc/dnsmasq.conf:ro
+      - ./configs/dns/resolv.conf:/etc/resolv.conf:ro
+        #ports:
+      #- 53:53
+    network_mode: host
+    #networks:
+    #- dns
+
 
 
   nginx-proxy:
@@ -37,6 +45,7 @@ services:
 
 
   whoami:
+    container_name: whoami
     image: emilevauge/whoami
     environment:
       - VIRTUAL_HOST=whoami.oxygen.local
@@ -53,7 +62,7 @@ services:
     networks:
       - plex
     ports:
-      - 32400:32400/tcp 
+      #- 32400:32400/tcp 
       - 3005:3005/tcp 
       - 8324:8324/tcp 
       - 32469:32469/tcp 
@@ -87,7 +96,7 @@ services:
         - VIRTUAL_HOST=movies.oxygen.local
         - VIRTUAL_PORT=9091
     ports:
-        - "2002:9091"   # webui
+      #- "2002:9091"   # webui
         - "51414:51413/tcp" # p2p traffic
         - "51414:51413/udp" # p2p traffic
     volumes:
@@ -107,7 +116,7 @@ services:
         - VIRTUAL_HOST=tv.oxygen.local
         - VIRTUAL_PORT=9091
     ports:
-        - "2003:9091"   # webui
+      #- "2003:9091"   # webui
         - "51415:51413/tcp" # p2p traffic
         - "51415:51413/udp" # p2p traffic
     volumes:
