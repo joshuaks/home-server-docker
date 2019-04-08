@@ -4,29 +4,59 @@
 
 # CAP_ADD/DROP information: http://rhelblog.redhat.com/2016/10/17/secure-your-containers-with-this-one-weird-trick/
 
-# @TODO: dns, openvpn, pihole, flexget, webdav, git server, backblaze, ansible -- drops caps, restrict permissions, etc.
+# @TODO: wireguard, flexget, webdav, git server, backblaze, ansible -- drops caps, restrict permissions, etc.
 
 version: "2.0"
 
 services:    
 
-
-  dns-server:
-    container_name: dc-dns-server
-    image: andyshinn/dnsmasq:2.76
+  # http://tonylawrence.com/posts/unix/synology/free-your-synology-ports/
+  pihole:
+    container_name: pihole
+    image: pihole/pihole:latest
+    hostname: pihole
+    domainname: oxygen.local             # <-- Update
+    mac_address: d0:ca:ab:cd:ef:01
     cap_add:
       - NET_ADMIN
+    networks:
+      pihole_network:
+        ipv4_address: 10.0.1.30   # <-- Update
+    dns:
+      - 127.0.0.1
+      - 193.138.218.74
     volumes:
-      - ./configs/dns/hosts:/etc/hosts:ro
-      - ./configs/dns/dnsmasq.conf:/etc/dnsmasq.conf:ro
-      - ./configs/dns/resolv.conf:/etc/resolv.conf:ro
-        #ports:
-      #- 53:53
-    network_mode: host
-    #networks:
-    #- dns
+      - ./configs/pihole/hosts:/etc/hosts:ro
+    ports:
+      - 443/tcp
+      - 53/tcp
+      - 53/udp
+      - 67/udp
+      - 80/tcp
+    environment:
+      - ServerIP=10.0.1.8         # <-- Update (match ipv4_address)
+      - VIRTUAL_HOST=pihole.oxygen.local  # <-- Update (match hostname + domainname)
+      - VIRTUAL_PORT=80
+      - WEBPASSWORD=""                   # <-- Add password (if required)
+    restart: unless-stopped
 
+#  wireguard-vpn:
+#    container_name: dc-wireguard-vpn
+#    image: jess/wireguard
+#    networks:
+#      - vpn
 
+# probably un-needed now that pihole can do the job
+#  dns-server:
+#    container_name: dc-dns-server
+#    image: andyshinn/dnsmasq:2.76
+#    cap_add:
+#      - NET_ADMIN
+#    volumes:
+#      - ./configs/dns/hosts:/etc/hosts:ro
+#      - ./configs/dns/dnsmasq.conf:/etc/dnsmasq.conf:ro
+#      - ./configs/dns/resolv.conf:/etc/resolv.conf:ro
+#    network_mode: host
 
   nginx-proxy:
     container_name: dc-proxy
@@ -43,16 +73,14 @@ services:
     environment:
       - DEFAULT_HOST=whoami.oxygen.local
 
-
   whoami:
-    container_name: whoami
+    container_name: dc-whoami
     image: emilevauge/whoami
     environment:
       - VIRTUAL_HOST=whoami.oxygen.local
       - VIRTUAL_PORT=80
     networks:
       - proxy
-
 
   # https://hub.docker.com/r/plexinc/pms-docker
   plex:
@@ -84,7 +112,6 @@ services:
       - VIRTUAL_HOST=plex.oxygen.local
       - VIRTUAL_PORT=32400
 
-
   transmission-movies:
     container_name: dc-transmission-movies
     image: linuxserver/transmission:121
@@ -104,7 +131,6 @@ services:
       - /volume1/video/transmission.movies.downloads:/downloads/complete
       - transmission-movies-incomplete:/downloads/incomplete
 
-
   transmission-tv:
     container_name: dc-transmission-tv
     image: linuxserver/transmission:121
@@ -123,9 +149,6 @@ services:
       - /volume1/docker/transmission.tv.config:/config
       - /volume1/video/transmission.tv.downloads:/downloads/complete
       - transmission-tv-incomplete:/downloads/incomplete
-
-
-
 
 #  transmission-videos:
 #    container_name: dc-transmission-videos
@@ -214,10 +237,21 @@ networks:
     plex:
     proxy:
     dns:
-        #    flexget:
-        #    pihole:
-        #    syncthing:
-    #nginx-proxy:
+    # http://tonylawrence.com/posts/unix/synology/free-your-synology-ports/
+    pihole_network:
+      driver: macvlan
+      driver_opts:
+        parent: eth0
+      ipam:
+        config:
+          - subnet: 10.0.1.0/24            # <-- Update
+            gateway: 10.0.1.1              # <-- Update
+            ip_range: 10.0.1.192/27        # <-- Update
+
+          #    flexget:
+          #    pihole:
+          #    syncthing:
+      #nginx-proxy:
 #
 volumes:
   plex-transcode:
