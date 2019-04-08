@@ -12,7 +12,7 @@ services:
 
   # http://tonylawrence.com/posts/unix/synology/free-your-synology-ports/
   pihole:
-    container_name: pihole
+    container_name: dc-pihole
     image: pihole/pihole:latest
     hostname: pihole
     domainname: oxygen.local             # <-- Update
@@ -27,6 +27,8 @@ services:
       - 193.138.218.74
     volumes:
       - ./configs/pihole/hosts:/etc/hosts:ro
+        #- ./configs/pihole/setupVars.conf:/etc/pihole/setupVars.conf
+        #- ./configs/pihole/01-pihole.conf:/etc/dnsmasq.d/01-pihole.conf
     ports:
       - 443/tcp
       - 53/tcp
