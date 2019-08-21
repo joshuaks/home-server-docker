@@ -10,7 +10,7 @@
 
 - name: install pip
   block:
-    - name: create working directory for docker-compose
+    - name: create working directory for pip installation
       tempfile:
         state: file
         suffix: ".get-pip-py"
