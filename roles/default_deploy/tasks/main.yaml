@@ -1,0 +1,99 @@
+---
+
+
+- name: find pip
+  command: which pip
+  register: pip_binary
+  ignore_errors: true
+  changed_when: false
+
+
+- name: install pip
+  block:
+    - name: create working directory for docker-compose
+      tempfile:
+        state: file
+        suffix: ".get-pip-py"
+      register: get_pip_py
+    
+    - name: download pip install script
+      get_url: 
+        url: https://bootstrap.pypa.io/get-pip.py
+        dest: "{{ get_pip_py.path }}"
+        force: true
+        mode: '0500'
+    
+    - name: run pip install script
+      command: "python {{ get_pip_py.path }}"
+      ignore_errors: true
+      become: true
+
+    - name: cleanup pip install script
+      file:
+        path: "{{ get_pip_py.path }}"
+        state: absent
+  when: pip_binary.rc != 0
+
+  
+- name: install docker pip module for ansible
+  pip:
+    name: [ "setuptools", "docker", "docker-compose" ]
+  become: true  
+
+
+- name: install docker
+  package:
+    name: docker
+    state: present
+  ignore_errors: true
+
+
+- name: install docker-compose as a container
+  get_url: 
+    url: "https://github.com/docker/compose/releases/download/{{ docker_compose_version }}/run.sh"
+    dest: /usr/local/bin/docker-compose
+    force: false
+    mode: '0500'
+  vars:
+    docker_compose_version: "1.24.1"
+
+
+- name: create working directory for docker-compose
+  tempfile:
+    state: directory
+    suffix: ".home-docker-server"
+  register: working_dir
+
+
+- name: print working directory
+  debug:
+    msg: "The working directory is: {{ working_dir.path }}"
+
+
+- name: copy docker-compose.yaml to server
+  copy:
+    src: docker_compose.yaml
+    dest: "{{ working_dir.path }}/docker-compose.yaml"
+
+
+- name: copy bind-mount configs to server
+  copy:
+    src: configs
+    dest: "{{ working_dir.path }}"
+
+
+- name: prune docker
+  docker_prune:
+    containers: yes
+    images: yes
+    networks: yes
+    volumes: yes
+    #builder_cache: yes - not valid for version of docker installed on system
+  become: true
+
+- name: run containers
+  docker_compose:
+    project_src: "{{ working_dir.path }}"
+    project_name: homeserverdocker
+  become: true
+

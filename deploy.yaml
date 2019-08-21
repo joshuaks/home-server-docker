@@ -1,0 +1,8 @@
+---
+
+- name: Deploy docker stuff
+  hosts: all
+  #become: True
+  roles:
+  - role: default_deploy
+
