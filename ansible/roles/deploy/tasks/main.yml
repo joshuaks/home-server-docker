@@ -1,0 +1,41 @@
+---
+
+# if installed on synology this will fail
+- name: install docker
+  package:
+    name: docker
+    state: present
+  register: install_docker_result
+  failed_when:
+    - install_docker_result.failed == true
+    - install_docker_result.msg != "Could not find a module for unknown."
+
+
+# if previous failed, will check if the binary already exists
+- name: check for docker installation
+  command: which docker
+  when: install_docker_result.msg == "Could not find a module for unknown."
+  environment:
+    PATH: "{{ ansible_env.PATH }}:/usr/local/bin"
+
+
+# only run this if the package module is functioning
+- name: enable docker service
+  service:
+    name: docker
+    state: started
+    enabled: yes
+  when: ! install_docker_result.failed
+
+
+- name: install docker-compose
+  get_url:
+    url: https://github.com/docker/compose/releases/download/1.25.5/run.sh
+    dest: /usr/local/bin/docker-compose
+    mode: '0700'
+
+- name: create docker deploy directory
+  file:
+    path: /opt/docker/home
+    state: directory
+    mode: '0700'
