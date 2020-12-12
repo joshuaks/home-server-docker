@@ -13,7 +13,8 @@ SCRIPT_DIRPATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"  ; declare -r
 function main(){
   local -r inventory_path="${SCRIPT_DIRPATH}/inventory"
   ansible-playbook \
-    deploy.yml
+    deploy.yml \
+    --ask-become-pass
 }
     #--inventory "${inventory_path}/home" \
 main

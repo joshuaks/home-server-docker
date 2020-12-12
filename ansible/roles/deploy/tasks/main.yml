@@ -1,41 +1,50 @@
 ---
 
-# if installed on synology this will fail
-- name: install docker
-  package:
-    name: docker
-    state: present
-  register: install_docker_result
-  failed_when:
-    - install_docker_result.failed == true
-    - install_docker_result.msg != "Could not find a module for unknown."
 
-
-# if previous failed, will check if the binary already exists
-- name: check for docker installation
-  command: which docker
-  when: install_docker_result.msg == "Could not find a module for unknown."
-  environment:
-    PATH: "{{ ansible_env.PATH }}:/usr/local/bin"
-
-
-# only run this if the package module is functioning
-- name: enable docker service
-  service:
-    name: docker
-    state: started
-    enabled: yes
-  when: ! install_docker_result.failed
-
-
-- name: install docker-compose
-  get_url:
-    url: https://github.com/docker/compose/releases/download/1.25.5/run.sh
-    dest: /usr/local/bin/docker-compose
-    mode: '0700'
-
-- name: create docker deploy directory
-  file:
-    path: /opt/docker/home
+- name: create temporary build and deploy directory
+  tempfile:
     state: directory
+    suffix: "-build"
+  register: working_dir
+
+
+- name: Copy file with owner and permissions
+  copy:
+    src: "{{ role_path }}/templates"
+    dest: "{{ working_dir.path }}"
     mode: '0700'
+
+
+- name: copy dockerfile
+  copy:
+    src: "{{ role_path }}/files/Dockerfile"
+    dest: /tmp/Dockerfile #"{{ working_dir.path }}/Dockerfile"
+    mode: '0700'
+
+- name: build dockerfile
+  docker_image:
+    name: wireguard_compiler
+    build:
+      path: /tmp #"{{ working_dir.path }}"
+      dockerfile: "Dockerfile"
+
+
+- name: Run Docker Container
+  docker_container:
+    name: wireguard_compiler
+    image: wireguard_compiler
+    state: started
+
+
+- name: start services
+  docker_compose:
+    project_src: "{{ working_dir.path }}/templates"
+    remove_orphans: yes
+    remove_images: all
+    #restarted: yes
+    recreate: always
+    #build: yes
+    state: present
+    pull: yes
+
+

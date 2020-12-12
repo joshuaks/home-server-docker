@@ -8,255 +8,202 @@
 
 version: "2.0"
 
-services:    
+services:
 
-  # http://tonylawrence.com/posts/unix/synology/free-your-synology-ports/
-  pihole:
-    container_name: dc-pihole
-    image: pihole/pihole:latest
-    hostname: pihole
-    domainname: oxygen.local             # <-- Update
-    mac_address: d0:ca:ab:cd:ef:01
-    cap_add:
-      - NET_ADMIN
-    networks:
-      pihole_network:
-        ipv4_address: 10.0.1.30   # <-- Update
-    dns:
-      - 127.0.0.1
-      - 193.138.218.74
-    volumes:
-      - ./configs/pihole/hosts:/etc/hosts:ro
-        #- ./configs/pihole/setupVars.conf:/etc/pihole/setupVars.conf
-        #- ./configs/pihole/01-pihole.conf:/etc/dnsmasq.d/01-pihole.conf
-    ports:
-      - 443/tcp
-      - 53/tcp
-      - 53/udp
-      - 67/udp
-      - 80/tcp
-    environment:
-      - ServerIP=10.0.1.8         # <-- Update (match ipv4_address)
-      - VIRTUAL_HOST=pihole.oxygen.local  # <-- Update (match hostname + domainname)
-      - VIRTUAL_PORT=80
-      - WEBPASSWORD=""                   # <-- Add password (if required)
-    restart: unless-stopped
-
-#  wireguard-vpn:
-#    container_name: dc-wireguard-vpn
-#    image: jess/wireguard
-#    networks:
-#      - vpn
-
-# probably un-needed now that pihole can do the job
-#  dns-server:
-#    container_name: dc-dns-server
-#    image: andyshinn/dnsmasq:2.76
-#    cap_add:
-#      - NET_ADMIN
-#    volumes:
-#      - ./configs/dns/hosts:/etc/hosts:ro
-#      - ./configs/dns/dnsmasq.conf:/etc/dnsmasq.conf:ro
-#      - ./configs/dns/resolv.conf:/etc/resolv.conf:ro
-#    network_mode: host
-
-  nginx-proxy:
-    container_name: dc-proxy
-    image: jwilder/nginx-proxy
-    restart: always
-    ports:
-      - "8080:80"
-    volumes:
-      - /var/run/docker.sock:/tmp/docker.sock:ro
-    networks:
-      - proxy
-      - transmission
-      - plex
-    environment:
-      - DEFAULT_HOST=whoami.oxygen.local
-
-  whoami:
-    container_name: dc-whoami
-    image: emilevauge/whoami
-    environment:
-      - VIRTUAL_HOST=whoami.oxygen.local
-      - VIRTUAL_PORT=80
-    networks:
-      - proxy
-
-  # https://hub.docker.com/r/plexinc/pms-docker
-  plex:
-    container_name: dc-plex
-    image: plexinc/pms-docker:public
-    restart: always
-    networks:
-      - plex
-    ports:
-      #- 32400:32400/tcp 
-      - 3005:3005/tcp 
-      - 8324:8324/tcp 
-      - 32469:32469/tcp 
-      - 1900:1900/udp 
-      - 32410:32410/udp 
-      - 32412:32412/udp 
-      - 32413:32413/udp 
-      - 32414:32414/udp 
-    volumes:
-      - /volume1/docker/plex/config:/config
-      - plex-transcode:/transcode
-      - /volume1/video/transmission.tv.downloads/:/data/tv:ro
-      - /volume1/video/transmission.movies.downloads/:/data/movies:ro
-    environment:
-      - HOSTNAME=PlexServer
-      - TZ=America/New_York
-      - ADVERTISE_IP=http://10.0.1.8:32400
-      - ALLOWED_NETWORKS=192.168.1.0/24,172.16.0.0/16,172.19.0.0/16
-      - VIRTUAL_HOST=plex.oxygen.local
-      - VIRTUAL_PORT=32400
-
-  transmission-movies:
-    container_name: dc-transmission-movies
+  # downloader
+  transmission:
+    container_name: transmission
     image: linuxserver/transmission:121
     networks:
-        - transmission
+      - transmission
     restart: on-failure
     environment:
         - S6_READ_ONLY_ROOT=1 # https://github.com/just-containers/s6-overlay/pull/176
         - VIRTUAL_HOST=movies.oxygen.local
         - VIRTUAL_PORT=9091
+        - PUID=64999
+        - PGID=64999
     ports:
-      #- "2002:9091"   # webui
+        - "9091:9091"   # webui
         - "51414:51413/tcp" # p2p traffic
         - "51414:51413/udp" # p2p traffic
     volumes:
-      - /volume1/docker/transmission.movies.config:/config
-      - /volume1/video/transmission.movies.downloads:/downloads/complete
-      - transmission-movies-incomplete:/downloads/incomplete
+      - transmission_config:/config
+      - transmission_downloads_complete:/downloads/complete
+      - transmission_downloads_incomplete:/downloads/incomplete
 
-  transmission-tv:
-    container_name: dc-transmission-tv
-    image: linuxserver/transmission:121
+  # tv watcher
+  radarr:
+    container_name: radarr
+    image: linuxserver/radarr:version-3.0.0.4235
+    environment:
+      - PUID=64999
+      - PGID=64999
+    ports:
+      - 7878:7878
+    volumes:
+      - radarr_config:/config
+      - radarr_movies:/movies
+      - radarr_downloads:/downloads
     networks:
-        - transmission
+      - radarr
+    restart: on-failure
+    #
+
+  # movie watcher
+  couch_potato:
+    container_name: couch_potato
+    image: linuxserver/couchpotato:version-7260c12f
+    networks:
+      - couch_potato
     restart: on-failure
     environment:
-        - S6_READ_ONLY_ROOT=1 # https://github.com/just-containers/s6-overlay/pull/176
-        - VIRTUAL_HOST=tv.oxygen.local
-        - VIRTUAL_PORT=9091
+      - PUID=64999
+      - PGID=64999
     ports:
-      #- "2003:9091"   # webui
-        - "51415:51413/tcp" # p2p traffic
-        - "51415:51413/udp" # p2p traffic
+      - "5050:5050"
     volumes:
-      - /volume1/docker/transmission.tv.config:/config
-      - /volume1/video/transmission.tv.downloads:/downloads/complete
-      - transmission-tv-incomplete:/downloads/incomplete
+      #- couch_potato_data:/datadir
+      #- couch_potato_media:/media
+      - couch_potato_config:/config
+      - couch_potato_movies:/movies
+      - couch_potato_downloads:/downloads
 
-#  transmission-videos:
-#    container_name: dc-transmission-videos
-#    image: linuxserver/transmission:121
-#    networks:
-#        - transmission
-#    restart: on-failure
-#    environment:
-#        - S6_READ_ONLY_ROOT=1 # https://github.com/just-containers/s6-overlay/pull/176
-#        - VIRTUAL_HOST=videos.oxygen.local
-#        - VIRTUAL_PORT=9091
-#    ports:
-#        - "2001:9091"   # webui
-#        - "51413:51413/tcp" # p2p traffic
-#        - "51413:51413/udp" # p2p traffic
-#          #expose:
-#          #- 9091
-#    #    read_only: true
-#    #    #user: nobody
-#    #    cap_drop:
-#    #      - ALL
-#    #    cap_add:
-#    #      - setgid
-#    #      - setuid
-#    #      - chown
-#    volumes:
-#      - /volume1/docker/docker-transmission-video/info:/config
-#      - /volume1/video/Transmission Downloads/:/downloads/complete
-#      - transmission-videos-incomplete:/downloads/incomplete
-#    tmpfs:
-#        - /var:rw,exec 
-#        - /run
-#        - /var/run:rw,exec
 
-#  flexget:
-#    container_name: dc-flexget
-#    image: wiserain/flexget:2.13.14
-#    networks:
-#        - flexget
-#    restart: on-failure
-#    ports:
-#        - "2002:3539"   # webui
-#    #read_only: true
-#    #user: nobody
-#    #cap_drop:
-#        #- ALL
-#    volumes:
-#        - /data
-#        - ./configs/flexget:/config
-#        #-/config
-#    tmpfs:
-#        - tmp
-#
-#
-#  pihole:
-#    container_name: dc-pihole
-#    image: diginc/pi-hole:debian_v3.3.1
-#    networks:
-#        - pihole
-#    restart: on-failure
-#    #ports:
-#        #- "2002:53/tcp"   # 
-#        #- "2002:53/udp"   # 
-#        #- "2007:80"   # webui
-#    #read_only: true
-#    #user: nobody
-#    #cap_drop:
-#        #- ALL
-#    #volumes:
-#        #- /data
-#        #- /config
-#    tmpfs:
-#        - tmp
-#
-#
-#  syncthing:
-#    container_name: dc-syncthing
-#    image: linuxserver/syncthing
-#    networks:
-#        - syncthing
-#    restart: on-failure
+  # movie player
+  plex:
+    container_name: plex
+    image: linuxserver/plex:version-1.21.0.3711-b509cc236
+    networks:
+      - plex
+    restart: on-failure
+    environment:
+      - PUID=64999
+      - PGID=64999
+      - VERSION=docker
+    volumes:
+      - plex_config:/config
+      - plex_tv:/tv
+      - plex_movies:/movies
+    ports:
+      - 32400:32400       # (for access to the Plex Media Server) [required]
+      - 1900:1900/udp     # UDP: 1900 (for access to the Plex DLNA Server)
+        #- 3005:3005         # TCP: 3005 (for controlling Plex Home Theater via Plex Companion)
+        #- 5353:5353/udp     # UDP: 5353 (for older Bonjour/Avahi network discovery)
+        #- 8324:8324         # TCP: 8324 (for controlling Plex for Roku via Plex Companion)
+        #- 32410:32410/udp   # UDP: 32410, 32412, 32413, 32414 (for current GDM network discovery)
+        #- 32412:32412/udp   # UDP: 32410, 32412, 32413, 32414 (for current GDM network discovery)
+        #- 32413:32413/udp   # UDP: 32410, 32412, 32413, 32414 (for current GDM network discovery)
+        #- 32414:32414/udp   # UDP: 32410, 32412, 32413, 32414 (for current GDM network discovery)
+      - 32469:32469       # TCP: 32469 (for access to the Plex DLNA Server)
+
+
+
+  wireguard_client:
+    container_name: wireguard_client
+    image: jess/wireguard:latest ###linuxserver/wireguard:version-v1.0.20200827
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    environment:
+      - PUID=1000
+      - PGID=1000
+        #- SERVERURL=wireguard.domain.com #optional
+        #- SERVERPORT=51820 #optional
+        #- INTERNAL_SUBNET=10.13.13.0 #optional
+        #- ALLOWEDIPS=0.0.0.0/0 #optional
+    volumes:
+      #- wireguard_client_config:/config
+      - /opt/home_server_docker/wireguard_client/config:/config
+      - /lib/modules:/lib/modules:ro
+    ports:
+      - 51820:51820/udp
+    sysctls:
+      - net.ipv4.conf.all.src_valid_mark=1
+    restart: unless-stopped
+
+
+
+  ## http://tonylawrence.com/posts/unix/synology/free-your-synology-ports/
+  #
+  #pihole:
+  #  container_name: pihole
+  #  image: pihole/pihole:latest
+  #  hostname: pihole
+  #  domainname: oxygen.local              # <-- Update
+  #  mac_address: d0:ca:ab:cd:ef:01
+  #  networks:
+  #    pihole_network:
+  #      ipv4_address: 10.0.1.30           # <-- Update
+  #  cap_add:
+  #    - NET_BIND_SERVICE
+  #    - NET_RAW
+  #    - NET_ADMIN
+  #  cap_drop:
+  #    - ALL
+  #  dns:
+  #    - 127.0.0.1
+  #    - 193.138.218.74
+  #  volumes:
+  #    - /volume1/docker/pihole/configs/pihole/hosts:/etc/hosts:ro
+  #    - /volume1/docker/pihole/etc-pihole/:/etc/pihole
+  #    - /volume1/docker/pihole/etc-dnsmasq.d/:/etc/dnsmasq.d
+  #  tmpfs:
+  #    - /tmp
+  #  ports:
+  #    - 443/tcp
+  #    - 53/tcp
+  #    - 53/udp
+  #    - 67/udp
+  #    - 80/tcp
+  #  environment:
+  #    - VIRTUAL_HOST=pihole.oxygen.local  # <-- Update (match hostname + domainname)
+  #    - VIRTUAL_PORT=80
+  #    - WEBPASSWORD=""                    # <-- Add password (if required)
+  #  restart: unless-stopped
+
 
 
 networks:
     transmission:
+    radarr:
+    couch_potato:
     plex:
-    proxy:
-    dns:
+      #
+      #proxy:
+      #dns:
+      #flexget:
+      #wireguard:
     # http://tonylawrence.com/posts/unix/synology/free-your-synology-ports/
-    pihole_network:
-      driver: macvlan
-      driver_opts:
-        parent: eth0
-      ipam:
-        config:
-          - subnet: 10.0.1.0/24            # <-- Update
-            gateway: 10.0.1.1              # <-- Update
-            ip_range: 10.0.1.192/27        # <-- Update
-
-          #    flexget:
-          #    pihole:
-          #    syncthing:
-      #nginx-proxy:
+    #    pihole_network:
+    #      driver: macvlan
+    #      driver_opts:
+    #        parent: eth0
+    #      ipam:
+    #        config:
+    #          - subnet: 10.0.1.0/24            # <-- Update
+    #            gateway: 10.0.1.1              # <-- Update
+    #            ip_range: 10.0.1.192/27        # <-- Update
+    #
+    #          #    flexget:
+    #          #    pihole:
+    #          #    syncthing:
+    #      #nginx-proxy:
 #
 volumes:
-  plex-transcode:
-  transmission-movies-incomplete:
-  transmission-tv-incomplete:
+  #plex:
+  transmission_config:
+  transmission_downloads_complete:
+  transmission_downloads_incomplete:
+  radarr_config:
+  radarr_movies:
+  radarr_downloads:
+  couch_potato_config:
+  couch_potato_movies:
+  couch_potato_downloads:
+  plex_config:
+  plex_tv:
+  plex_movies:
+  wireguard_client_config:
+
 
