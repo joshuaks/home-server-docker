@@ -21,19 +21,19 @@
     dest: /tmp/Dockerfile #"{{ working_dir.path }}/Dockerfile"
     mode: '0700'
 
-- name: build dockerfile
-  docker_image:
-    name: wireguard_compiler
-    build:
-      path: /tmp #"{{ working_dir.path }}"
-      dockerfile: "Dockerfile"
+#- name: build dockerfile
+#  docker_image:
+#    name: wireguard_compiler
+#    build:
+#      path: /tmp #"{{ working_dir.path }}"
+#      dockerfile: "Dockerfile"
+#
 
-
-- name: Run Docker Container
-  docker_container:
-    name: wireguard_compiler
-    image: wireguard_compiler
-    state: started
+#- name: Run Docker Container
+#  docker_container:
+#    name: wireguard_compiler
+#    image: wireguard_compiler
+#    state: started
 
 
 - name: start services
