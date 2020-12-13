@@ -13,7 +13,11 @@ SCRIPT_DIRPATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"  ; declare -r
 function main(){
   local -r inventory_path="${SCRIPT_DIRPATH}/inventory"
 
-  sudo docker build . -t my_ansible:latest
+  (
+    cd ./dockerfiles/ansible-playbook
+    sudo docker build . -t my_ansible:latest
+  )
+
 
     sudo docker run \
 	--rm \

@@ -99,68 +99,18 @@ services:
 
 
 
-  wireguard_client:
-    container_name: wireguard_client
-    image: jess/wireguard:latest ###linuxserver/wireguard:version-v1.0.20200827
-    cap_add:
-      - NET_ADMIN
-      - SYS_MODULE
-    environment:
-      - PUID=1000
-      - PGID=1000
-        #- SERVERURL=wireguard.domain.com #optional
-        #- SERVERPORT=51820 #optional
-        #- INTERNAL_SUBNET=10.13.13.0 #optional
-        #- ALLOWEDIPS=0.0.0.0/0 #optional
-    volumes:
-      #- wireguard_client_config:/config
-      - /opt/home_server_docker/wireguard_client/config:/config
-      - /lib/modules:/lib/modules:ro
-    ports:
-      - 51820:51820/udp
-    sysctls:
-      - net.ipv4.conf.all.src_valid_mark=1
+  wireguard:
+    build:
+      context: /data/dockerfiles/wireguard
+      dockerfile: Dockerfile
+    container_name: my_wireguard
+    volumes: 
+      - /data/roles/deploy/files/wireguard.conf.no_commit:/data/wireguard/config:ro
+    network_mode: "service:transmission"
     restart: unless-stopped
+    entrypoint: tail -f /dev/null
 
 
-
-  ## http://tonylawrence.com/posts/unix/synology/free-your-synology-ports/
-  #
-  #pihole:
-  #  container_name: pihole
-  #  image: pihole/pihole:latest
-  #  hostname: pihole
-  #  domainname: oxygen.local              # <-- Update
-  #  mac_address: d0:ca:ab:cd:ef:01
-  #  networks:
-  #    pihole_network:
-  #      ipv4_address: 10.0.1.30           # <-- Update
-  #  cap_add:
-  #    - NET_BIND_SERVICE
-  #    - NET_RAW
-  #    - NET_ADMIN
-  #  cap_drop:
-  #    - ALL
-  #  dns:
-  #    - 127.0.0.1
-  #    - 193.138.218.74
-  #  volumes:
-  #    - /volume1/docker/pihole/configs/pihole/hosts:/etc/hosts:ro
-  #    - /volume1/docker/pihole/etc-pihole/:/etc/pihole
-  #    - /volume1/docker/pihole/etc-dnsmasq.d/:/etc/dnsmasq.d
-  #  tmpfs:
-  #    - /tmp
-  #  ports:
-  #    - 443/tcp
-  #    - 53/tcp
-  #    - 53/udp
-  #    - 67/udp
-  #    - 80/tcp
-  #  environment:
-  #    - VIRTUAL_HOST=pihole.oxygen.local  # <-- Update (match hostname + domainname)
-  #    - VIRTUAL_PORT=80
-  #    - WEBPASSWORD=""                    # <-- Add password (if required)
-  #  restart: unless-stopped
 
 
 
@@ -169,27 +119,7 @@ networks:
     radarr:
     couch_potato:
     plex:
-      #
-      #proxy:
-      #dns:
-      #flexget:
-      #wireguard:
-    # http://tonylawrence.com/posts/unix/synology/free-your-synology-ports/
-    #    pihole_network:
-    #      driver: macvlan
-    #      driver_opts:
-    #        parent: eth0
-    #      ipam:
-    #        config:
-    #          - subnet: 10.0.1.0/24            # <-- Update
-    #            gateway: 10.0.1.1              # <-- Update
-    #            ip_range: 10.0.1.192/27        # <-- Update
-    #
-    #          #    flexget:
-    #          #    pihole:
-    #          #    syncthing:
-    #      #nginx-proxy:
-#
+
 volumes:
   #plex:
   transmission_config:

@@ -35,6 +35,26 @@
 #    image: wireguard_compiler
 #    state: started
 
+- name: PWD
+  block:
+    - name: PWD
+      command: pwd
+      register: result
+    
+    - name: PWD
+      debug:
+        msg: "PWD: {{ result.stdout }}"
+
+- name: LS
+  block:
+    - name: LS
+      command: ls ./roles/deploy/files
+      register: result
+    
+    - name: LS
+      debug:
+        msg: "LS {{ result.stdout }}"
+
 
 - name: start services
   docker_compose:
