@@ -21,18 +21,22 @@ function main(){
 
     sudo docker run \
 	--rm \
-	-it \
+	--interactive \
+	--tty \
+	--network 'host' \
 	--read-only \
 	--cap-drop 'ALL' \
-	-v $(pwd):/data:ro \
-	-v /var/run/docker.sock:/var/run/docker.sock:ro \
+	--workdir "$(pwd)" \
+	--volume "$(pwd):$(pwd):ro" \
+	--volume '/var/run/docker.sock:/var/run/docker.sock:ro' \
 	--tmpfs '/root/.ansible' \
-	--tmpfs '/tmp' \
 	--tmpfs '/.ansible' \
+	--tmpfs '/tmp' \
 	my_ansible:latest \
 	ansible-playbook ipados_deploy.yml 
 	#--ask-become-pass
 	#--network 'host' \
+	#--volume '/tmp:/tmp' \
 }
     #--inventory "${inventory_path}/home" \
 main

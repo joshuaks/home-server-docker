@@ -61,9 +61,9 @@
     project_src: "{{ working_dir.path }}/templates"
     remove_orphans: yes
     remove_images: all
-    #restarted: yes
+    restarted: yes
     recreate: always
-    #build: yes
+    build: yes
     state: present
     pull: yes
 

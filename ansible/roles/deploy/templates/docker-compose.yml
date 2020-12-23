@@ -10,37 +10,64 @@ version: "2.0"
 
 services:
 
+
+  nginx-proxy:
+    image: jwilder/nginx-proxy
+    container_name: proxy
+    ports:
+      - 8080:80
+      - 4433:443
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+      - /etc/nginx/vhost.d
+      #- /location/for/certs:/etc/nginx/certs:ro
+      - /usr/share/nginx/html
+    networks:
+      - transmission
+      - radarr
+      - couch_potato
+      - plex
+
   # downloader
   transmission:
     container_name: transmission
     image: linuxserver/transmission:121
     networks:
       - transmission
+    depends_on:
+      - nginx-proxy
     restart: on-failure
+    read_only: true
     environment:
-        - S6_READ_ONLY_ROOT=1 # https://github.com/just-containers/s6-overlay/pull/176
-        - VIRTUAL_HOST=movies.oxygen.local
+        - VIRTUAL_HOST=transmission.oxygen.local
         - VIRTUAL_PORT=9091
+        - S6_READ_ONLY_ROOT=1
         - PUID=64999
         - PGID=64999
     ports:
-        - "9091:9091"   # webui
+        - "9091:9091/tcp"   # webui
         - "51414:51413/tcp" # p2p traffic
         - "51414:51413/udp" # p2p traffic
     volumes:
       - transmission_config:/config
-      - transmission_downloads_complete:/downloads/complete
+      - downloaded_media:/downloads/complete
       - transmission_downloads_incomplete:/downloads/incomplete
+    tmpfs:
+      - /var:rw,exec
 
   # tv watcher
   radarr:
     container_name: radarr
     image: linuxserver/radarr:version-3.0.0.4235
+    #read_only: true
     environment:
+      - S6_READ_ONLY_ROOT=1
       - PUID=64999
       - PGID=64999
+      - VIRTUAL_HOST=radarr.oxygen.local
+      - VIRTUAL_PORT=7878
     ports:
-      - 7878:7878
+      - "7878:7878/tcp"
     volumes:
       - radarr_config:/config
       - radarr_movies:/movies
@@ -48,26 +75,36 @@ services:
     networks:
       - radarr
     restart: on-failure
+    tmpfs:
+      - '/var:rw,exec'
+      - '/app:rw,exec'
+      - '/app/radarr/bin/Radarr:rw,exec'
+      - '/defaults:rw'
     #
 
   # movie watcher
   couch_potato:
     container_name: couch_potato
     image: linuxserver/couchpotato:version-7260c12f
+    read_only: true
     networks:
       - couch_potato
     restart: on-failure
     environment:
+      - S6_READ_ONLY_ROOT=1 # https://github.com/just-containers/s6-overlay/pull/176
       - PUID=64999
       - PGID=64999
+      - VIRTUAL_HOST=cp.oxygen.local
+      - VIRTUAL_PORT=5050
     ports:
-      - "5050:5050"
+      - "5050:5050/tcp"
     volumes:
       #- couch_potato_data:/datadir
       #- couch_potato_media:/media
       - couch_potato_config:/config
-      - couch_potato_movies:/movies
-      - couch_potato_downloads:/downloads
+      - couch_potato_torrents:/root
+    tmpfs:
+      - /var:rw,exec
 
 
   # movie player
@@ -77,40 +114,50 @@ services:
     networks:
       - plex
     restart: on-failure
+   #$read_only: true
     environment:
+      - S6_READ_ONLY_ROOT=1 # https://github.com/just-containers/s6-overlay/pull/176
       - PUID=64999
       - PGID=64999
       - VERSION=docker
+      - VIRTUAL_HOST=plex.oxygen.local
+      - VIRTUAL_PORT=32400
     volumes:
       - plex_config:/config
-      - plex_tv:/tv
-      - plex_movies:/movies
+      - downloaded_media:/downloaded_media
     ports:
-      - 32400:32400       # (for access to the Plex Media Server) [required]
-      - 1900:1900/udp     # UDP: 1900 (for access to the Plex DLNA Server)
-        #- 3005:3005         # TCP: 3005 (for controlling Plex Home Theater via Plex Companion)
+      - 32400:32400/tcp      # (for access to the Plex Media Server) [required]
+        #- 1900:1900/udp        # UDP: 1900 (for access to the Plex DLNA Server)
+        #- 3005:3005/tcp     # TCP: 3005 (for controlling Plex Home Theater via Plex Companion)
         #- 5353:5353/udp     # UDP: 5353 (for older Bonjour/Avahi network discovery)
-        #- 8324:8324         # TCP: 8324 (for controlling Plex for Roku via Plex Companion)
+        #- 8324:8324/tcp     # TCP: 8324 (for controlling Plex for Roku via Plex Companion)
         #- 32410:32410/udp   # UDP: 32410, 32412, 32413, 32414 (for current GDM network discovery)
         #- 32412:32412/udp   # UDP: 32410, 32412, 32413, 32414 (for current GDM network discovery)
         #- 32413:32413/udp   # UDP: 32410, 32412, 32413, 32414 (for current GDM network discovery)
         #- 32414:32414/udp   # UDP: 32410, 32412, 32413, 32414 (for current GDM network discovery)
-      - 32469:32469       # TCP: 32469 (for access to the Plex DLNA Server)
+      - 32469:32469/tcp       # TCP: 32469 (for access to the Plex DLNA Server)
+    tmpfs:
+      - /var:rw,exec
 
 
 
-  wireguard:
-    build:
-      context: /data/dockerfiles/wireguard
-      dockerfile: Dockerfile
-    container_name: my_wireguard
-    volumes: 
-      - /data/roles/deploy/files/wireguard.conf.no_commit:/data/wireguard/config:ro
-    network_mode: "service:transmission"
-    restart: unless-stopped
-    entrypoint: tail -f /dev/null
-
-
+#  wireguard:
+#    build:
+#      context: ./dockerfiles/wireguard
+#      dockerfile: Dockerfile
+#    #image: my_wireguard:latest
+#    container_name: my_wireguard
+#    #volumes: 
+#      #- /data/roles/deploy/files/wireguard.conf.no_commit:/data/wireguard/config:ro
+#      #- ./roles/deploy/files/wireguard.conf.no_commit:/data/wireguard/config:ro
+#    #network_mode: "service:transmission"
+#    networks:
+#      - wireguard_temp
+#    restart: unless-stopped
+#    cap_add:
+#      - ALL
+#    entrypoint: tail -f /dev/null
+#    #command: ""
 
 
 
@@ -120,20 +167,17 @@ networks:
     couch_potato:
     plex:
 
+
 volumes:
-  #plex:
   transmission_config:
-  transmission_downloads_complete:
   transmission_downloads_incomplete:
   radarr_config:
   radarr_movies:
   radarr_downloads:
   couch_potato_config:
-  couch_potato_movies:
-  couch_potato_downloads:
   plex_config:
-  plex_tv:
-  plex_movies:
   wireguard_client_config:
+  downloaded_media:
+  couch_potato_torrents:
 
 
