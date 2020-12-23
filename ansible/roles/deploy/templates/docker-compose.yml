@@ -10,6 +10,38 @@ version: "2.0"
 
 services:
 
+  # http://tonylawrence.com/posts/unix/synology/free-your-synology-ports/
+pihole:
+  container_name: dc-pihole
+  image: pihole/pihole:latest
+  hostname: pihole
+  domainname: oxygen.local             # <-- Update
+  mac_address: d0:ca:ab:cd:ef:01
+  cap_add:
+    - NET_ADMIN
+  networks:
+    pihole_network:
+      ipv4_address: 10.0.1.30   # <-- Update
+  dns:
+    - 127.0.0.1
+    - 193.138.218.74
+  volumes:
+    - ./configs/pihole/hosts:/etc/hosts:ro
+    #- ./configs/pihole/setupVars.conf:/etc/pihole/setupVars.conf
+    #- ./configs/pihole/01-pihole.conf:/etc/dnsmasq.d/01-pihole.conf
+  ports:
+    - 443/tcp
+    - 53/tcp
+    - 53/udp
+    - 67/udp
+    - 80/tcp
+  environment:
+    - ServerIP=10.0.1.8         # <-- Update (match ipv4_address)
+    - VIRTUAL_HOST=pihole.oxygen.local  # <-- Update (match hostname + domainname)
+    - VIRTUAL_PORT=80
+    - WEBPASSWORD=""                   # <-- Add password (if required)
+  restart: unless-stopped
+
 
   nginx-proxy:
     image: jwilder/nginx-proxy
