@@ -10,37 +10,37 @@ version: "2.0"
 
 services:
 
-  # http://tonylawrence.com/posts/unix/synology/free-your-synology-ports/
-pihole:
-  container_name: dc-pihole
-  image: pihole/pihole:latest
-  hostname: pihole
-  domainname: oxygen.local             # <-- Update
-  mac_address: d0:ca:ab:cd:ef:01
-  cap_add:
-    - NET_ADMIN
-  networks:
-    pihole_network:
-      ipv4_address: 10.0.1.30   # <-- Update
-  dns:
-    - 127.0.0.1
-    - 193.138.218.74
-  volumes:
-    - ./configs/pihole/hosts:/etc/hosts:ro
-    #- ./configs/pihole/setupVars.conf:/etc/pihole/setupVars.conf
-    #- ./configs/pihole/01-pihole.conf:/etc/dnsmasq.d/01-pihole.conf
-  ports:
-    - 443/tcp
-    - 53/tcp
-    - 53/udp
-    - 67/udp
-    - 80/tcp
-  environment:
-    - ServerIP=10.0.1.8         # <-- Update (match ipv4_address)
-    - VIRTUAL_HOST=pihole.oxygen.local  # <-- Update (match hostname + domainname)
-    - VIRTUAL_PORT=80
-    - WEBPASSWORD=""                   # <-- Add password (if required)
-  restart: unless-stopped
+#  # http://tonylawrence.com/posts/unix/synology/free-your-synology-ports/
+#  pihole:
+#    container_name: pihole
+#    image: pihole/pihole:latest
+#    hostname: pihole
+#    domainname: pihole.local             # <-- Update
+#    mac_address: d0:ca:ab:cd:ef:01
+#    cap_add:
+#      - NET_ADMIN
+#    networks:
+#      pihole:
+#        ipv4_address: 10.0.1.30   # <-- Update
+#    dns:
+#      - 127.0.0.1
+#      - 193.138.218.74
+#    #volumes:
+#      #- ./configs/pihole/hosts:/etc/hosts:ro
+#      #- ./configs/pihole/setupVars.conf:/etc/pihole/setupVars.conf
+#      #- ./configs/pihole/01-pihole.conf:/etc/dnsmasq.d/01-pihole.conf
+#    ports:
+#      - 443/tcp
+#      - 53/tcp
+#      - 53/udp
+#      - 67/udp
+#      - 80/tcp
+#    environment:
+#      - ServerIP=10.0.1.8         # <-- Update (match ipv4_address)
+#      - VIRTUAL_HOST=pihole.oxygen.local  # <-- Update (match hostname + domainname)
+#      - VIRTUAL_PORT=80
+#      - WEBPASSWORD=""                   # <-- Add password (if required)
+#    restart: unless-stopped
 
 
   nginx-proxy:
@@ -82,7 +82,9 @@ pihole:
         - "51414:51413/udp" # p2p traffic
     volumes:
       - transmission_config:/config
-      - downloaded_media:/downloads/complete
+      #- downloaded_media:/downloads/complete
+      #- /opt/home_server_docker/media/downloads:/downloads/complete
+      - /volume1/homes/joshuasarver/media/downloaded:/downloads/completed
       - transmission_downloads_incomplete:/downloads/incomplete
     tmpfs:
       - /var:rw,exec
@@ -142,9 +144,10 @@ pihole:
   # movie player
   plex:
     container_name: plex
-    image: linuxserver/plex:version-1.21.0.3711-b509cc236
-    networks:
-      - plex
+    image: linuxserver/plex:version-1.21.1.3830-6c22540d5
+    network_mode: host
+    #networks:
+      #- plex
     restart: on-failure
    #$read_only: true
     environment:
@@ -154,20 +157,23 @@ pihole:
       - VERSION=docker
       - VIRTUAL_HOST=plex.oxygen.local
       - VIRTUAL_PORT=32400
+      - ADVERTISE_IP="http://10.0.1.8:32400/"
+      - PLEX_CLAIM=claim-E1yK7Kug2D-NV1RxGLQW
     volumes:
       - plex_config:/config
-      - downloaded_media:/downloaded_media
-    ports:
-      - 32400:32400/tcp      # (for access to the Plex Media Server) [required]
-        #- 1900:1900/udp        # UDP: 1900 (for access to the Plex DLNA Server)
-        #- 3005:3005/tcp     # TCP: 3005 (for controlling Plex Home Theater via Plex Companion)
-        #- 5353:5353/udp     # UDP: 5353 (for older Bonjour/Avahi network discovery)
-        #- 8324:8324/tcp     # TCP: 8324 (for controlling Plex for Roku via Plex Companion)
-        #- 32410:32410/udp   # UDP: 32410, 32412, 32413, 32414 (for current GDM network discovery)
-        #- 32412:32412/udp   # UDP: 32410, 32412, 32413, 32414 (for current GDM network discovery)
-        #- 32413:32413/udp   # UDP: 32410, 32412, 32413, 32414 (for current GDM network discovery)
-        #- 32414:32414/udp   # UDP: 32410, 32412, 32413, 32414 (for current GDM network discovery)
-      - 32469:32469/tcp       # TCP: 32469 (for access to the Plex DLNA Server)
+      #- downloaded_media:/downloaded_media
+      - /volume1/homes/joshuasarver/media/downloaded:/downloaded_media:ro
+    #ports:
+    #  - 32400:32400/tcp      # (for access to the Plex Media Server) [required]
+    #  - 1900:1900/udp        # UDP: 1900 (for access to the Plex DLNA Server)
+    #  - 3005:3005/tcp     # TCP: 3005 (for controlling Plex Home Theater via Plex Companion)
+    #  - 5353:5353/udp     # UDP: 5353 (for older Bonjour/Avahi network discovery)
+    #  - 8324:8324/tcp     # TCP: 8324 (for controlling Plex for Roku via Plex Companion)
+    #  - 32410:32410/udp   # UDP: 32410, 32412, 32413, 32414 (for current GDM network discovery)
+    #  - 32412:32412/udp   # UDP: 32410, 32412, 32413, 32414 (for current GDM network discovery)
+    #  - 32413:32413/udp   # UDP: 32410, 32412, 32413, 32414 (for current GDM network discovery)
+    #  - 32414:32414/udp   # UDP: 32410, 32412, 32413, 32414 (for current GDM network discovery)
+    #  - 32469:32469/tcp       # TCP: 32469 (for access to the Plex DLNA Server)
     tmpfs:
       - /var:rw,exec
 
@@ -198,6 +204,17 @@ networks:
     radarr:
     couch_potato:
     plex:
+    # http://tonylawrence.com/posts/unix/synology/free-your-synology-ports/
+#    pihole:
+#      driver: macvlan
+#      driver_opts:
+#        parent: eth0
+#      ipam:
+#        config:
+#          - subnet: 10.0.1.0/24            # <-- Update
+#            gateway: 10.0.1.1              # <-- Update
+#            ip_range: 10.0.1.192/27        # <-- Update
+#
 
 
 volumes:
