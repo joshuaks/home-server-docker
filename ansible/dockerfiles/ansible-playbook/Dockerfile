@@ -16,8 +16,4 @@ RUN pip3 install --no-cache --upgrade \
 		docker \
 		docker-compose
 
-
-
-#RUN chmod +x /usr/local/bin/docker-compose
-
 WORKDIR /data
